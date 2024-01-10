@@ -11,7 +11,7 @@
 
 `class` 中填写脚本初始化阶段输出的课程对应编号。
 ```yaml
-acconut: 114514
+account: 114514
 password: 1919810
 class: [1, 1, 4, 5, 1, 4]
 ```
