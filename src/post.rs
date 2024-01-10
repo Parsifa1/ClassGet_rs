@@ -4,7 +4,10 @@ pub async fn print_all_class(data_json: &serde_json::Value) -> anyhow::Result<()
     let num = &data_json["data"]["total"].as_u64().unwrap_or(0);
     let num = *num as usize;
     for i in 1..num {
-        println!("{}: {}", i, data_json["data"]["rows"][i]["KCM"]);
+        println!(
+            "{}: {} {}",
+            i, data_json["data"]["rows"][i]["KCM"], data_json["data"]["rows"][i]["XGXKLB"]
+        );
     }
     Ok(())
 }
@@ -41,8 +44,8 @@ pub async fn get_class(
         if json_body["msg"] != "请求过快，请登录后再试" {
             println!("{} {}", kcm, xgxklb);
             println!("{}", msg);
-            log::info!("{} {}", kcm, xgxklb);
-            log::info!("{}", msg);
+            // log::info!("{} {}", kcm, xgxklb);
+            // log::info!("{}", msg);
         }
 
         if json_body["msg"] == "该课程已在选课结果中" {
