@@ -38,6 +38,6 @@ fn read_class() -> Vec<usize> {
             config_out
         }
     };
-    let user_config: Config = serde_yaml::from_str(&config).expect("config.yaml read failed!");
+    let user_config: Config = serde_yaml::from_str(&config).expect("config.yaml parse failed!");
     user_config.class
 }
