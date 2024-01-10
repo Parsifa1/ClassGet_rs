@@ -46,6 +46,7 @@ pub async fn get_class(
         }
 
         if json_body["msg"] == "该课程已在选课结果中" {
+            log::info!("{}", msg);
             log::info!("{} {}", kcm, xgxklb);
             break;
         }
