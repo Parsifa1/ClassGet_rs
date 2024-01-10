@@ -18,6 +18,7 @@ async fn main() -> anyhow::Result<()> {
 
     print!("你选择的课程为：");
     class.iter().for_each(|i| print!("{} ", i));
+    print!("\n");
 
     let mut set = JoinSet::new();
     for i in class {
