@@ -41,9 +41,12 @@ pub async fn get_class(
         if json_body["msg"] != "请求过快，请登录后再试" {
             println!("{} {}", kcm, xgxklb);
             println!("{}", msg);
+            log::info!("{} {}", kcm, xgxklb);
+            log::info!("{}", msg);
         }
 
         if json_body["msg"] == "该课程已在选课结果中" {
+            log::info!("{} {}", kcm, xgxklb);
             break;
         }
     }
