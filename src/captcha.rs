@@ -22,16 +22,17 @@ fn save_image_from_data_uri(data_uri: Option<&str>) -> anyhow::Result<()> {
             let decoded_data = general_purpose::STANDARD.decode(data)?;
             let image = image::load_from_memory(&decoded_data)?;
             image
-                .save("../public/output.png")?;
+                .save("output.png")?;
         }
     }
     Ok(())
 }
 
 fn ocr_image() -> anyhow::Result<String> {
-    let image = std::fs::read("../public/output.png")?;
+    let image = std::fs::read("output.png")?;
     let mut ocr = ddddocr::ddddocr_classification()?;
     let res = ocr.classification(image);
+    std::fs::remove_file("output.png")?;
     res
 }
 

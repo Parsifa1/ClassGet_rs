@@ -1,6 +1,28 @@
 use crate::captcha::get_uuid_captcha;
 use base64::{engine::general_purpose, Engine as _};
+use serde::{Deserialize, Serialize};
 use soft_aes::aes::aes_enc_ecb;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Config {
+    pub account: String,
+    pub password: String,
+    pub class: Vec<usize>,
+}
+
+fn read_account() -> anyhow::Result<(String, String)> {
+    let config_in = std::fs::read_to_string("config.yaml");
+    let config = match config_in {
+        Ok(config) => config,
+        Err(_) => {
+            let config_out =
+                std::fs::read_to_string("../config.yaml").expect("config.yaml read failed!");
+            config_out
+        }
+    };
+    let user_config: Config = serde_yaml::from_str(&config).expect("app.yaml read failed!");
+    Ok((user_config.account, user_config.password))
+}
 
 fn encrypt(password: &str) -> anyhow::Result<String> {
     let plaintext = password.as_bytes();
@@ -12,19 +34,21 @@ fn encrypt(password: &str) -> anyhow::Result<String> {
     Ok(vec_to_string)
 }
 
-pub async fn log_in(acc: &str, password: &str) -> anyhow::Result<String> {
-    let encrypt_password = encrypt(password)?;
+pub async fn log_in() -> anyhow::Result<String> {
+    let (acc, password) = read_account()?;
+    let acc = &acc;
+    let password = &password;
+    let encrypt_password = encrypt(&password)?;
     let url = "http://jwxk.hrbeu.edu.cn/xsxk/auth/hrbeu/login";
 
     let auth = loop {
         let (uuid, captcha) = get_uuid_captcha().await?;
         let payload = [
             ("loginname", acc),
-            ("password", encrypt_password.as_str()),
+            ("password", &encrypt_password),
             ("captcha", &captcha),
             ("uuid", &uuid),
         ];
-        // println!("captcha: {}\nuuid: {}", captcha, uuid);
         let response = reqwest::Client::new()
             .post(url)
             .form(&payload)
@@ -33,9 +57,9 @@ pub async fn log_in(acc: &str, password: &str) -> anyhow::Result<String> {
 
         let json_body: serde_json::Value = response.json().await?;
         match json_body["data"].as_str() {
-            // Some("null") if json_body["msg"].as_str() == Some("未到选课开始时间") => {
-            //     panic!("未到选课开始时间")
-            // }
+            Some("管理员变更数据或账号在其他地方登录，请重新登录") => {
+                continue
+            }
             Some("null") => continue,
             _ => {
                 break json_body["data"]["token"]
