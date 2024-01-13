@@ -4,16 +4,21 @@ mod parser;
 mod post;
 
 use crate::login::Config;
-use simplelog::{Config as LogConfig, LevelFilter};
+use simplelog::{ConfigBuilder, LevelFilter};
 use tokio::task::JoinSet;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    let logconfig = ConfigBuilder::new()
+        .add_filter_allow_str("crate::login")
+        .build();
+
     let _ = simplelog::WriteLogger::init(
         LevelFilter::Info,
-        LogConfig::default(),
+        logconfig,
         std::fs::File::create("get_class.log")?,
     );
+
     let auth = login::log_in().await?;
     let data_json = parser::get_data(&auth).await?;
     post::print_all_class(&data_json).await?;
