@@ -27,15 +27,14 @@ async fn main() -> anyhow::Result<()> {
     std::io::stdin().read_line(&mut String::new())?;
     let class = read_class();
 
-    print!("你选择的课程为：");
+    println!("你选择的课程为：");
     class.iter().for_each(|i| print!("{} ", i));
-    print!("\n");
 
     let mut set = JoinSet::new();
     for i in class {
         set.spawn(post::get_class(i, auth.clone(), data_json.clone()));
     }
-    while let Some(_) = set.join_next().await {}
+    while (set.join_next().await).is_some() {}
     Ok(())
 }
 
@@ -43,11 +42,7 @@ fn read_class() -> Vec<usize> {
     let config_in = std::fs::read_to_string("config.yaml");
     let config = match config_in {
         Ok(config) => config,
-        Err(_) => {
-            let config_out =
-                std::fs::read_to_string("../config.yaml").expect("config.yaml read failed!");
-            config_out
-        }
+        Err(_) => std::fs::read_to_string("../config.yaml").expect("config.yaml read failed!"),
     };
     let user_config: Config = serde_yaml::from_str(&config).expect("config.yaml parse failed!");
     user_config.class

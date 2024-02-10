@@ -1,6 +1,4 @@
 use base64::{engine::general_purpose, Engine as _};
-use image;
-use serde_json;
 
 fn save_image_from_data_uri(data_uri: Option<&str>) -> anyhow::Result<()> {
     let parse_data_uri = |uri: Option<&str>| -> Option<(String, String)> {
@@ -21,8 +19,7 @@ fn save_image_from_data_uri(data_uri: Option<&str>) -> anyhow::Result<()> {
         if mime == "data:image/png;base64" {
             let decoded_data = general_purpose::STANDARD.decode(data)?;
             let image = image::load_from_memory(&decoded_data)?;
-            image
-                .save("output.png")?;
+            image.save("output.png")?;
         }
     }
     Ok(())
@@ -49,9 +46,7 @@ pub async fn get_uuid_captcha() -> anyhow::Result<(String, String)> {
 
     let captcha = ocr_image()?;
 
-    let result = capt_uuid
+    capt_uuid
         .map(|uuid| (uuid.to_string(), captcha))
-        .ok_or(anyhow::anyhow!("Failed to get captcha"));
-
-    result
+        .ok_or(anyhow::anyhow!("Failed to get captcha"))
 }

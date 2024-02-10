@@ -1,10 +1,8 @@
-use serde_json;
-
-pub async fn get_data(auth: &String) -> anyhow::Result<serde_json::Value> {
+pub async fn get_data(auth: &str) -> anyhow::Result<serde_json::Value> {
     let url = "http://jwxk.hrbeu.edu.cn/xsxk/elective/clazz/list";
     let data = "{\"teachingClassType\":\"XGKC\",\"pageNumber\":1,\"pageSize\":1000,\"orderBy\":\"\",\"campus\":\"01\",\"SFCT\":\"0\"}";
 
-    let json: serde_json::Value = serde_json::from_str(&data)?;
+    let json: serde_json::Value = serde_json::from_str(data)?;
 
     let json_body = loop {
         let mut header = reqwest::header::HeaderMap::new();
