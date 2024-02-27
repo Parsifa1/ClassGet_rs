@@ -34,7 +34,7 @@ pub async fn log_in() -> anyhow::Result<String> {
     let (acc, password) = read_account()?;
     let acc = &acc;
     let encrypt_password = encrypt(&password)?;
-    let url = "http://jwxk.hrbeu.edu.cn/xsxk/auth/hrbeu/login";
+    let url = "***REMOVED***auth/hrbeu/login";
 
     let auth = loop {
         let (uuid, captcha) = get_uuid_captcha().await?;
@@ -44,7 +44,10 @@ pub async fn log_in() -> anyhow::Result<String> {
             ("captcha", &captcha),
             ("uuid", &uuid),
         ];
-        let response = reqwest::Client::new()
+        let response = reqwest::Client::builder()
+            .danger_accept_invalid_certs(true)
+            .build()
+            .unwrap()
             .post(url)
             .form(&payload)
             .send()

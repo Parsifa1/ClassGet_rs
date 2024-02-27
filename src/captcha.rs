@@ -34,9 +34,15 @@ fn ocr_image() -> anyhow::Result<String> {
 }
 
 pub async fn get_uuid_captcha() -> anyhow::Result<(String, String)> {
-    let url = "http://jwxk.hrbeu.edu.cn/xsxk/auth/captcha";
+    let url = "***REMOVED***auth/captcha";
 
-    let response = reqwest::Client::new().post(url).send().await?;
+    let response = reqwest::Client::builder()
+        .danger_accept_invalid_certs(true)
+        .build()
+        .unwrap()
+        .post(url)
+        .send()
+        .await?;
     let json_body: serde_json::Value = response.json().await?;
 
     let capt_name = json_body["data"]["captcha"].as_str();

@@ -23,12 +23,15 @@ pub async fn get_class(
         ("secretVal", pram["secretVal"].as_str().unwrap_or("")),
     ];
 
-    let url = "http://jwxk.hrbeu.edu.cn/xsxk/elective/clazz/add";
+    let url = "***REMOVED***elective/clazz/add";
     loop {
         let mut header = reqwest::header::HeaderMap::new();
         header.insert("authorization", auth.parse()?);
-        header.insert("batchid", "eb7b2a1a1a834276ab3594e9bc3f836b".parse()?);
-        let response = reqwest::Client::new()
+        header.insert("batchid", "5500614d49a44ded84b68e244ae5010a".parse()?);
+        let response = reqwest::Client::builder()
+            .danger_accept_invalid_certs(true)
+            .build()
+            .unwrap()
             .post(url)
             .headers(header)
             .form(&data)
