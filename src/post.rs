@@ -27,6 +27,9 @@ pub async fn get_class(
     auth: String,
     data_json: serde_json::Value,
 ) -> anyhow::Result<()> {
+    if num == 0 {
+        ()
+    }
     let pram = &data_json["data"]["rows"][num];
 
     let data = [
