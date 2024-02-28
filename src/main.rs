@@ -10,7 +10,7 @@ use tokio::task::JoinSet;
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let logconfig = ConfigBuilder::new()
-        .add_filter_allow_str("crate::login")
+        .add_filter_allow_str("crate::post")
         .build();
 
     let _ = simplelog::WriteLogger::init(
