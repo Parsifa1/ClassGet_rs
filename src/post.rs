@@ -27,7 +27,8 @@ pub async fn get_class(
     auth: String,
     data_json: serde_json::Value,
 ) -> anyhow::Result<()> {
-    let pram = &data_json["data"]["rows"][num];
+    let index = num as usize;
+    let pram = &data_json["data"]["rows"][index];
 
     let data = [
         ("clazzType", "XGKC"),
@@ -36,6 +37,9 @@ pub async fn get_class(
     ];
 
     let url = "***REMOVED***elective/clazz/add";
+    if num == 0 {
+        return Ok(());
+    }
     loop {
         let mut header = reqwest::header::HeaderMap::new();
         header.insert("authorization", auth.parse()?);
@@ -51,14 +55,9 @@ pub async fn get_class(
             .await?;
 
         let json_body: serde_json::Value = response.json().await?;
-        let kcm = &data_json["data"]["rows"][num]["KCM"];
-        let xgxklb = &data_json["data"]["rows"][num]["XGXKLB"];
+        let kcm = &data_json["data"]["rows"][index]["KCM"];
+        let xgxklb = &data_json["data"]["rows"][index]["XGXKLB"];
         let msg = &json_body["msg"];
-
-        if num == 0 {
-            ()
-        }
-
         if json_body["msg"] == "教学任务信息过期，请重新刷新列表" {
             let e = ClassError { value: num };
             return Err(anyhow::anyhow!(e));
