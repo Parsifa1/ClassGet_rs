@@ -34,7 +34,21 @@ async fn main() -> anyhow::Result<()> {
     for i in class {
         set.spawn(post::get_class(i, auth.clone(), data_json.clone()));
     }
-    while (set.join_next().await).is_some() {}
+    while let Some(res) = set.join_next().await {
+        match res {
+            Ok(task) => {
+                match task {
+                    Ok(_) => {}
+                    Err(e) => {
+                        let data_update = parser::get_data(&auth).await?;
+                        set.spawn(post::get_class(e.to_string().parse::<usize>().unwrap(), auth.clone(), data_update.clone()));
+
+                    }
+                }
+            }
+            Err(_) => {}
+        }
+    }
     Ok(())
 }
 

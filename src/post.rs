@@ -42,6 +42,10 @@ pub async fn get_class(
         let kcm = &data_json["data"]["rows"][num]["KCM"];
         let xgxklb = &data_json["data"]["rows"][num]["XGXKLB"];
         let msg = &json_body["msg"];
+
+        if json_body["msg"] == "教学任务信息过期，请重新刷新列表" {
+            return Err(anyhow::anyhow!(num.to_string()));
+        }
         if json_body["msg"] != "请求过快，请登录后再试" {
             println!("{} {}", kcm, xgxklb);
             println!("{}", msg);
