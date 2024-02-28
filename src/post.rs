@@ -1,3 +1,15 @@
+use std::fmt;
+#[derive(Debug)]
+pub struct ClassError {
+    pub value: usize,
+}
+impl fmt::Display for ClassError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "an error occurred with value: {}", self.value)
+    }
+}
+impl std::error::Error for ClassError {}
+
 pub async fn print_all_class(data_json: &serde_json::Value) -> anyhow::Result<()> {
     let num = &data_json["data"]["total"].as_u64().unwrap_or(0);
     let num = *num as usize;
@@ -43,8 +55,13 @@ pub async fn get_class(
         let xgxklb = &data_json["data"]["rows"][num]["XGXKLB"];
         let msg = &json_body["msg"];
 
+        if num == 0 {
+            ()
+        }
+
         if json_body["msg"] == "教学任务信息过期，请重新刷新列表" {
-            return Err(anyhow::anyhow!(num.to_string()));
+            let e = ClassError { value: num };
+            return Err(anyhow::anyhow!(e));
         }
         if json_body["msg"] != "请求过快，请登录后再试" {
             println!("{} {}", kcm, xgxklb);
