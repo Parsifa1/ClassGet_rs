@@ -27,8 +27,7 @@ pub async fn get_class(
     auth: String,
     data_json: serde_json::Value,
 ) -> anyhow::Result<()> {
-    let index = num as usize;
-    let pram = &data_json["data"]["rows"][index];
+    let pram = &data_json["data"]["rows"][num];
 
     let data = [
         ("clazzType", "XGKC"),
@@ -55,8 +54,8 @@ pub async fn get_class(
             .await?;
 
         let json_body: serde_json::Value = response.json().await?;
-        let kcm = &data_json["data"]["rows"][index]["KCM"];
-        let xgxklb = &data_json["data"]["rows"][index]["XGXKLB"];
+        let kcm = &data_json["data"]["rows"][num]["KCM"];
+        let xgxklb = &data_json["data"]["rows"][num]["XGXKLB"];
         let msg = &json_body["msg"];
         if json_body["msg"] == "教学任务信息过期，请重新刷新列表" {
             let e = ClassError { value: num };
