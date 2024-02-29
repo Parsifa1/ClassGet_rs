@@ -60,6 +60,11 @@ pub async fn get_class(
         let kcm = &data_json["data"]["rows"][num]["KCM"];
         let xgxklb = &data_json["data"]["rows"][num]["XGXKLB"];
         let msg = &json_body["msg"];
+
+        if kcm == "null" || xgxklb == "null" {
+            let e = ClassError { value: num };
+            return Err(anyhow::anyhow!(e));
+        }
         if json_body["msg"] == "教学任务信息过期，请重新刷新列表" {
             let e = ClassError { value: num };
             return Err(anyhow::anyhow!(e));
