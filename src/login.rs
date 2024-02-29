@@ -2,6 +2,7 @@ use crate::captcha::get_uuid_captcha;
 use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Serialize};
 use soft_aes::aes::aes_enc_ecb;
+use std::io::Write;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
@@ -10,13 +11,45 @@ pub struct Config {
     pub class: Vec<usize>,
 }
 
+pub fn read_class() -> Vec<usize> {
+    let config_in = std::fs::read_to_string("config.yaml");
+    let config = match config_in {
+        Ok(config) => config,
+        Err(_) => match std::fs::read_to_string("../config.yaml") {
+            Ok(config) => config,
+            Err(_) => {
+                let mut files =
+                    std::fs::File::create("config.yaml").expect("自动创建空配置文件夹失败");
+                let bytes: &[u8] =
+                    b"account: 114514\n\rpassword: 1919810\n\rclass: [1, 1, 4, 5, 1, 4]";
+                files.write_all(bytes).expect("自动写入配置文件夹失败");
+                String::new()
+            }
+        },
+    };
+    let user_config: Config =
+        serde_yaml::from_str(&config).expect("配置文件读取失败，请检查是否正确填写");
+    user_config.class
+}
+
 fn read_account() -> anyhow::Result<(String, String)> {
     let config_in = std::fs::read_to_string("config.yaml");
     let config = match config_in {
         Ok(config) => config,
-        Err(_) => std::fs::read_to_string("../config.yaml").expect("config.yaml read failed!"),
+        Err(_) => match std::fs::read_to_string("../config.yaml") {
+            Ok(config) => config,
+            Err(_) => {
+                let mut files =
+                    std::fs::File::create("config.yaml").expect("自动创建空配置文件夹失败");
+                let bytes: &[u8] =
+                    b"account: 114514\n\rpassword: 1919810\n\rclass: [1, 1, 4, 5, 1, 4]";
+                files.write_all(bytes).expect("自动写入配置文件夹失败");
+                String::new()
+            }
+        },
     };
-    let user_config: Config = serde_yaml::from_str(&config).expect("app.yaml read failed!");
+    let user_config: Config =
+        serde_yaml::from_str(&config).expect("配置文件读取失败，请检查是否正确填写");
     Ok((user_config.account, user_config.password))
 }
 
