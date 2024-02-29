@@ -42,7 +42,11 @@ async fn main() -> anyhow::Result<()> {
                 Err(e) => {
                     let data_update = parser::get_data(&auth).await?;
                     set.spawn(post::get_class(
-                        e.to_string().parse::<usize>().unwrap_or(0),
+                        if let Some(my_error) = e.downcast_ref::<crate::post::ClassError>() {
+                            my_error.value
+                        } else {
+                            0
+                        },
                         auth.clone(),
                         data_update.clone(),
                     ));
