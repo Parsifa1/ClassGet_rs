@@ -21,7 +21,7 @@ pub fn read_class() -> Vec<usize> {
                 let mut files =
                     std::fs::File::create("config.yaml").expect("自动创建空配置文件夹失败");
                 let bytes: &[u8] =
-                    b"account: 114514\n\rpassword: 1919810\n\rclass: [1, 1, 4, 5, 1, 4]";
+                    b"account: 114514\npassword: 1919810\nclass: [1, 1, 4, 5, 1, 4]";
                 files.write_all(bytes).expect("自动写入配置文件夹失败");
                 String::new()
             }
@@ -42,7 +42,7 @@ fn read_account() -> anyhow::Result<(String, String)> {
                 let mut files =
                     std::fs::File::create("config.yaml").expect("自动创建空配置文件夹失败");
                 let bytes: &[u8] =
-                    b"account: 114514\n\rpassword: 1919810\n\rclass: [1, 1, 4, 5, 1, 4]";
+                    b"account: 114514\npassword: 1919810\nclass: [1, 1, 4, 5, 1, 4]";
                 files.write_all(bytes).expect("自动写入配置文件夹失败");
                 String::new()
             }
