@@ -28,7 +28,7 @@ pub fn read_class() -> Vec<usize> {
         },
     };
     let user_config: Config =
-        serde_yaml::from_str(&config).expect("配置文件读取失败，请检查是否正确填写");
+        serde_yaml::from_str(&config).expect("配置文件读取失败，请检查是否存在配置文件，若不存在，将会自动创建");
     user_config.class
 }
 
@@ -49,7 +49,7 @@ fn read_account() -> anyhow::Result<(String, String)> {
         },
     };
     let user_config: Config =
-        serde_yaml::from_str(&config).expect("配置文件读取失败，请检查是否正确填写");
+        serde_yaml::from_str(&config).expect("配置文件读取失败，请检查是否存在配置文件，若不存在，将会自动创建");
     Ok((user_config.account, user_config.password))
 }
 
