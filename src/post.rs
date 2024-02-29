@@ -61,7 +61,7 @@ pub async fn get_class(
         let xgxklb = &data_json["data"]["rows"][num]["XGXKLB"];
         let msg = &json_body["msg"];
 
-        if kcm == "null" || xgxklb == "null" {
+        if json_body["msg"] == "参数校验不通过" {
             let e = ClassError { value: num };
             return Err(anyhow::anyhow!(e));
         }
