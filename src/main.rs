@@ -9,10 +9,8 @@ use tokio::task::JoinSet;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let logconfig = ConfigBuilder::new()
-        // .add_filter_allow_str("crate::post")
-        .build();
-
+    let logconfig = ConfigBuilder::new().build();
+    // .add_filter_allow_str("crate::post")
     let _ = simplelog::WriteLogger::init(
         LevelFilter::Info,
         logconfig,
@@ -21,7 +19,18 @@ async fn main() -> anyhow::Result<()> {
 
     let auth = login::log_in().await?;
     let data_json = parser::get_data(&auth).await?;
-    post::print_all_class(&data_json).await?;
+
+    match post::print_all_class(&data_json).await {
+        Ok(class_list) => {
+            println!("你的课程列表为：");
+            class_list.iter().for_each(|i| print!("{} ", i));
+            println!();
+        }
+        Err(e) => {
+            println!("{}, 请重启程序", e);
+            return Ok(());
+        }
+    }
 
     println!("按回车键继续...");
     std::io::stdin().read_line(&mut String::new())?;

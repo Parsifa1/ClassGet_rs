@@ -10,16 +10,22 @@ impl fmt::Display for ClassError {
 }
 impl std::error::Error for ClassError {}
 
-pub async fn print_all_class(data_json: &serde_json::Value) -> anyhow::Result<()> {
+pub async fn print_all_class(data_json: &serde_json::Value) -> anyhow::Result<Vec<String>> {
     let num = &data_json["data"]["total"].as_u64().unwrap_or(0);
+    let mut formatted_strings = Vec::new();
     let num = *num as usize;
     for i in 1..num {
-        println!(
+        let formatted_str = format!(
             "{}: {} {}",
             i, data_json["data"]["rows"][i]["KCM"], data_json["data"]["rows"][i]["XGXKLB"]
         );
+        formatted_strings.push(formatted_str);
     }
-    Ok(())
+    if formatted_strings.is_empty() {
+        return Err(anyhow::anyhow!("未能成功获取课程列表"));
+    }
+
+    Ok(formatted_strings)
 }
 
 pub async fn get_class(
@@ -28,7 +34,7 @@ pub async fn get_class(
     data_json: serde_json::Value,
 ) -> anyhow::Result<()> {
     if num == 0 {
-        ()
+        return Ok(());
     }
     let pram = &data_json["data"]["rows"][num];
 
@@ -72,10 +78,7 @@ pub async fn get_class(
         if json_body["msg"] != "请求过快，请登录后再试" {
             println!("{} {}", kcm, xgxklb);
             println!("{}", msg);
-            // log::info!("{} {}", kcm, xgxklb);
-            // log::info!("{}", msg);
         }
-
         if json_body["msg"] == "该课程已在选课结果中" {
             log::info!("{}", msg);
             log::info!("{} {}", kcm, xgxklb);
