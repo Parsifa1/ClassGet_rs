@@ -1,8 +1,10 @@
 use std::fmt;
+
 #[derive(Debug)]
 pub struct ClassError {
     pub value: usize,
 }
+
 impl fmt::Display for ClassError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "an error occurred with value: {}", self.value)

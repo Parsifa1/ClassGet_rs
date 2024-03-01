@@ -30,11 +30,26 @@ async fn main() -> anyhow::Result<()> {
     }
     println!("按回车键继续...");
     std::io::stdin().read_line(&mut String::new())?;
-    let class = login::read_class();
+    let raw_class = login::read_class();
     println!("你选择的课程为：");
-    class.iter().for_each(|i| print!("{} ", i));
-    println!();
+    match raw_class {
+        Ok(class) => {
+            class.iter().for_each(|i| println!("{} ", i));
+            async_handler(class, auth, data_json).await?;
+        }
+        Err(e) => {
+            println!("{}, 请重启程序", e);
+            return Ok(());
+        }
+    }
+    Ok(())
+}
 
+async fn async_handler(
+    class: Vec<usize>,
+    auth: String,
+    data_json: serde_json::Value,
+) -> anyhow::Result<()> {
     let mut set = JoinSet::new();
     for i in class {
         set.spawn(post::get_class(i, auth.clone(), data_json.clone()));
@@ -60,4 +75,3 @@ async fn main() -> anyhow::Result<()> {
     }
     Ok(())
 }
-//测试
