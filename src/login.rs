@@ -11,7 +11,7 @@ pub struct Config {
     pub class: Vec<usize>,
 }
 
-pub fn read_class() -> Vec<usize> {
+pub fn read_class() -> anyhow::Result<Vec<usize>> {
     let config_in = std::fs::read_to_string("config.yaml");
     let config = match config_in {
         Ok(config) => config,
@@ -20,16 +20,21 @@ pub fn read_class() -> Vec<usize> {
             Err(_) => {
                 let mut files =
                     std::fs::File::create("config.yaml").expect("自动创建空配置文件夹失败");
-                let bytes: &[u8] =
-                    b"account: 114514\npassword: 1919810\nclass: [1, 1, 4, 5, 1, 4]";
+                let bytes: &[u8] = b"account: 114514\npassword: 1919810\nclass: [1, 1, 4, 5, 1, 4]";
                 files.write_all(bytes).expect("自动写入配置文件夹失败");
                 String::new()
             }
         },
     };
-    let user_config: Config =
-        serde_yaml::from_str(&config).expect("配置文件读取失败，请检查是否存在配置文件，若不存在，将会自动创建");
-    user_config.class
+    let user_config: Config = match serde_yaml::from_str(&config) {
+        Ok(config) => config,
+        Err(_) => {
+            return Err(anyhow::anyhow!(
+                "配置文件读取失败，请检查是否存在配置文件，若不存在，将会自动创建"
+            ))
+        }
+    };
+    Ok(user_config.class)
 }
 
 fn read_account() -> anyhow::Result<(String, String)> {
@@ -41,15 +46,15 @@ fn read_account() -> anyhow::Result<(String, String)> {
             Err(_) => {
                 let mut files =
                     std::fs::File::create("config.yaml").expect("自动创建空配置文件夹失败");
-                let bytes: &[u8] =
-                    b"account: 114514\npassword: 1919810\nclass: [1, 1, 4, 5, 1, 4]";
+                let bytes: &[u8] = b"account: 114514\npassword: 1919810\nclass: [1, 1, 4, 5, 1, 4]";
                 files.write_all(bytes).expect("自动写入配置文件夹失败");
                 String::new()
             }
         },
     };
-    let user_config: Config =
-        serde_yaml::from_str(&config).expect("配置文件读取失败，请检查是否存在配置文件，若不存在，将会自动创建");
+    let user_config: Config = serde_yaml::from_str(&config).map_err(|_| {
+        anyhow::anyhow!("配置文件读取失败，请检查是否存在配置文件，若不存在，将会自动创建")
+    })?;
     Ok((user_config.account, user_config.password))
 }
 
