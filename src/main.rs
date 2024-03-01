@@ -20,7 +20,7 @@ async fn main() -> anyhow::Result<()> {
     match post::print_all_class(&data_json).await {
         Ok(class_list) => {
             println!("你的课程列表为：");
-            class_list.iter().for_each(|i| print!("{} ", i));
+            class_list.iter().for_each(|i| println!("{} ", i));
             println!();
         }
         Err(e) => {
