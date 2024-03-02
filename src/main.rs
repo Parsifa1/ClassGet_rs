@@ -1,49 +1,13 @@
 mod captcha;
+mod display;
 mod login;
 mod parser;
 mod post;
 
+use display::{error_handler, SpecializedDisplay};
+use login::{log_in, read_class};
 use simplelog::{ConfigBuilder, LevelFilter};
 use tokio::task::JoinSet;
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let logconfig = ConfigBuilder::new().build();
-    let _ = simplelog::WriteLogger::init(
-        LevelFilter::Info,
-        logconfig,
-        std::fs::File::create("get_class.log")?,
-    );
-    let auth = login::log_in().await?;
-    let data_json = parser::get_data(&auth).await?;
-
-    match post::print_all_class(&data_json).await {
-        Ok(class_list) => {
-            println!("你的课程列表为：");
-            class_list.iter().for_each(|i| println!("{} ", i));
-            println!();
-        }
-        Err(e) => {
-            println!("{}, 请重启程序", e);
-            return Ok(());
-        }
-    }
-    println!("按回车键继续...");
-    std::io::stdin().read_line(&mut String::new())?;
-    let raw_class = login::read_class();
-    println!("你选择的课程为：");
-    match raw_class {
-        Ok(class) => {
-            class.iter().for_each(|i| println!("{} ", i));
-            async_handler(class, auth, data_json).await?;
-        }
-        Err(e) => {
-            println!("{}, 请重启程序", e);
-            return Ok(());
-        }
-    }
-    Ok(())
-}
 
 async fn async_handler(
     class: Vec<usize>,
@@ -73,5 +37,30 @@ async fn async_handler(
             }
         }
     }
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let logconfig = ConfigBuilder::new().build();
+    simplelog::WriteLogger::init(
+        LevelFilter::Info,
+        logconfig,
+        std::fs::File::create("get_class.log")?,
+    )?;
+
+    let auth = log_in().await.or_else(error_handler)?.display();
+    let data_json = parser::get_data(&auth).await?;
+    post::print_all_class(&data_json)
+        .await
+        .or_else(error_handler)?
+        .display();
+
+    println!("按回车键继续...");
+    std::io::stdin().read_line(&mut String::new())?;
+
+    let class = read_class().or_else(error_handler)?.display();
+    async_handler(class, auth.clone(), data_json.clone()).await?;
+
     Ok(())
 }
