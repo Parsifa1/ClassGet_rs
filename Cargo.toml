@@ -21,3 +21,9 @@ soft-aes = "0.1.0"
 log = "0.4.20"
 structured-logger = "1.0.3"
 simplelog = "0.12.1"
+
+[profile.release]
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = 'abort'
