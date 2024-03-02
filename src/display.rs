@@ -25,6 +25,6 @@ impl SpecializedDisplay for Vec<usize> {
 }
 
 pub fn error_handler<T>(error: anyhow::Error) -> anyhow::Result<T> {
-    println!("{}, 请重启程序", error);
-    std::process::exit(1); // 退出程序
+    println!("{}, 请检查配置文件，并重启程序", error);
+    std::process::exit(1);
 }

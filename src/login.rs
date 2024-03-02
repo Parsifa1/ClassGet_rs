@@ -95,7 +95,7 @@ pub async fn log_in() -> anyhow::Result<String> {
         match json_body["data"].as_str() {
             Some("管理员变更数据或账号在其他地方登录，请重新登录") => {
                 return Err(anyhow::anyhow!(
-                    "管理员变更数据或账号在其他地方登录，请重新登录"
+                    "账号在其他地方登录"
                 ));
             }
             Some("null") => continue,
