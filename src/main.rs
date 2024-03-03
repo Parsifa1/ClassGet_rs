@@ -4,7 +4,7 @@ mod login;
 mod parser;
 mod post;
 
-use display::{error_handler, SpecializedDisplay};
+use display::SpecializedDisplay;
 use login::{log_in, read_class};
 use parser::get_data;
 use post::print_all_class;
@@ -51,17 +51,14 @@ async fn main() -> anyhow::Result<()> {
         std::fs::File::create("get_class.log")?,
     )?;
 
-    let auth = log_in().await.or_else(error_handler)?.display();
+    let auth = log_in().await.display()?;
     let data_json = get_data(&auth).await?;
-    print_all_class(&data_json)
-        .await
-        .or_else(error_handler)?
-        .display();
+    print_all_class(&data_json).await.display()?;
 
     println!("按回车键继续...");
     std::io::stdin().read_line(&mut String::new())?;
 
-    let class = read_class().or_else(error_handler)?.display();
+    let class = read_class().display()?;
     async_handler(class, auth.clone(), data_json.clone()).await?;
 
     Ok(())
