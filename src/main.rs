@@ -6,6 +6,8 @@ mod post;
 
 use display::{error_handler, SpecializedDisplay};
 use login::{log_in, read_class};
+use parser::get_data;
+use post::print_all_class;
 use simplelog::{ConfigBuilder, LevelFilter};
 use tokio::task::JoinSet;
 
@@ -50,8 +52,8 @@ async fn main() -> anyhow::Result<()> {
     )?;
 
     let auth = log_in().await.or_else(error_handler)?.display();
-    let data_json = parser::get_data(&auth).await?;
-    post::print_all_class(&data_json)
+    let data_json = get_data(&auth).await?;
+    print_all_class(&data_json)
         .await
         .or_else(error_handler)?
         .display();
