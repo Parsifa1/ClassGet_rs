@@ -1,28 +1,50 @@
 {
-  description = "A basic flake with a shell";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-  inputs.flake-utils.url = "github:numtide/flake-utils";
-  inputs.cloudtide = {
-    url = "github:parsifa1/nixpkg";
-    inputs.nixpkgs.follows = "nixpkgs";
+  description = "class_get's devshell";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    cloudtide = {
+      url = "github:parsifa1/nixpkg";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
-    nixpkgs,
     cloudtide,
+    fenix,
+    nixpkgs,
     flake-utils,
     ...
   }:
     flake-utils.lib.eachDefaultSystem (system: let
       pkgs = nixpkgs.legacyPackages.${system};
+      rustoolchains = fenix.packages.${system};
+      ct = cloudtide.packages.${system};
     in {
       devShells.default = pkgs.mkShell {
-        packages = with pkgs; [libiconv pkg-config];
+        packages = with pkgs; [
+          libiconv
+          pkg-config
+          (rustoolchains.stable.withComponents [
+            "cargo"
+            "clippy"
+            "rust-docs"
+            "rust-std"
+            "rustc"
+            "rust-src"
+          ])
+          (rustoolchains.complete.withComponents ["rustfmt"])
+        ];
         shellHook = ''
           export OPENSSL_DEV=${pkgs.openssl.dev}
           export PKG_CONFIG_PATH=${pkgs.openssl.dev}/lib/pkgconfig
           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${pkgs.stdenv.cc.cc.lib}/lib
-          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${cloudtide.packages.${system}.onnxruntime}/lib
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${ct.onnxruntime}/lib
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${pkgs.openssl.out}/lib
         '';
       };
     });
