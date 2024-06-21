@@ -29,14 +29,7 @@
         packages = with pkgs; [
           libiconv
           pkg-config
-          (rustoolchains.stable.withComponents [
-            "cargo"
-            "clippy"
-            "rust-docs"
-            "rust-std"
-            "rustc"
-            "rust-src"
-          ])
+          (rustoolchains.stable.withComponents ["cargo" "clippy" "rust-docs" "rust-std" "rustc" "rust-src"])
           (rustoolchains.complete.withComponents ["rustfmt"])
         ];
         shellHook = ''
