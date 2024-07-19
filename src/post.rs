@@ -33,6 +33,7 @@ pub async fn print_all_class(data_json: &serde_json::Value) -> anyhow::Result<Ve
 pub async fn get_class(
     num: usize,
     auth: String,
+    batchid: String,
     data_json: serde_json::Value,
 ) -> anyhow::Result<()> {
     if num == 0 {
@@ -53,7 +54,7 @@ pub async fn get_class(
     loop {
         let mut header = reqwest::header::HeaderMap::new();
         header.insert("authorization", auth.parse()?);
-        header.insert("batchid", "5500614d49a44ded84b68e244ae5010a".parse()?);
+        header.insert("batchid", batchid.parse()?);
         let response = reqwest::Client::builder()
             .danger_accept_invalid_certs(true)
             .build()
@@ -69,22 +70,22 @@ pub async fn get_class(
         let xgxklb = &data_json["data"]["rows"][num]["XGXKLB"];
         let msg = &json_body["msg"];
 
-        if json_body["msg"] == "参数校验不通过" {
-            let e = ClassError { value: num };
-            return Err(anyhow::anyhow!(e));
-        }
-        if json_body["msg"] == "教学任务信息过期，请重新刷新列表" {
-            let e = ClassError { value: num };
-            return Err(anyhow::anyhow!(e));
-        }
-        if json_body["msg"] != "请求过快，请登录后再试" {
-            println!("{} {}", kcm, xgxklb);
-            println!("{}", msg);
-        }
-        if json_body["msg"] == "该课程已在选课结果中" {
-            log::info!("{}", msg);
-            log::info!("{} {}", kcm, xgxklb);
-            break;
+        match json_body["msg"].as_str() {
+            Some("参数校验不通过") | Some("教学任务信息过期，请重新刷新列表") =>
+            {
+                let e = ClassError { value: num };
+                return Err(anyhow::anyhow!(e));
+            }
+            Some("请求过快，请登录后再试") => {}
+            Some("该课程已在选课结果中") => {
+                log::info!("{}", msg);
+                log::info!("{} {}", kcm, xgxklb);
+                break;
+            }
+            _ => {
+                println!("{} {}", kcm, xgxklb);
+                println!("{}", msg);
+            }
         }
     }
 

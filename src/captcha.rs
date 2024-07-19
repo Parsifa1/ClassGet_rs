@@ -1,6 +1,10 @@
+use anyhow::anyhow;
 use base64::{engine::general_purpose, Engine as _};
+use image::DynamicImage;
+use image::ImageOutputFormat::Png;
+use std::io::Cursor;
 
-fn save_image_from_data_uri(data_uri: Option<&str>) -> anyhow::Result<()> {
+fn save_image_from_data_uri(data_uri: Option<&str>) -> anyhow::Result<DynamicImage> {
     let parse_data_uri = |uri: Option<&str>| -> Option<(String, String)> {
         let uri = match uri {
             Some(uri) => uri,
@@ -19,18 +23,24 @@ fn save_image_from_data_uri(data_uri: Option<&str>) -> anyhow::Result<()> {
         if mime == "data:image/png;base64" {
             let decoded_data = general_purpose::STANDARD.decode(data)?;
             let image = image::load_from_memory(&decoded_data)?;
-            image.save("output.png")?;
+            Ok(image)
+        } else {
+            Err(anyhow!("解析验证码图片失败"))
         }
+    } else {
+        Err(anyhow!("获取验证码图片失败"))
     }
-    Ok(())
 }
 
-fn ocr_image() -> anyhow::Result<String> {
-    let image = std::fs::read("output.png")?;
-    let mut ocr = ddddocr::ddddocr_classification()?;
-    let res = ocr.classification(image, false);
-    std::fs::remove_file("output.png")?;
-    res
+fn ocr_image(image: DynamicImage) -> anyhow::Result<String> {
+    let mut ocr = ddddocr::ddddocr_classification().expect("dddd失败");
+    let mut img_raw = Cursor::new(Vec::new());
+    image.write_to(&mut img_raw, Png)?;
+    // image.save("test.png")?;
+    // let image = std::fs::read("test.png")?;
+    ocr.classification(img_raw.into_inner(), false)
+        .expect("ocr失败");
+    Ok("1".to_string())
 }
 
 pub async fn get_uuid_captcha() -> anyhow::Result<(String, String)> {
@@ -48,9 +58,9 @@ pub async fn get_uuid_captcha() -> anyhow::Result<(String, String)> {
     let capt_name = json_body["data"]["captcha"].as_str();
     let capt_uuid = json_body["data"]["uuid"].as_str();
 
-    save_image_from_data_uri(capt_name)?;
+    let image = save_image_from_data_uri(capt_name)?;
 
-    let captcha = ocr_image()?;
+    let captcha = ocr_image(image)?;
 
     capt_uuid
         .map(|uuid| (uuid.to_string(), captcha))

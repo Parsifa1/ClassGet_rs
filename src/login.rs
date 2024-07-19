@@ -17,13 +17,7 @@ pub fn read_class() -> anyhow::Result<Vec<usize>> {
         Ok(config) => config,
         Err(_) => match std::fs::read_to_string("../config.yaml") {
             Ok(config) => config,
-            Err(_) => {
-                let mut files =
-                    std::fs::File::create("config.yaml").expect("自动创建空配置文件夹失败");
-                let bytes: &[u8] = b"account: 114514\npassword: 1919810\nclass: [1, 1, 4, 5, 1, 4]";
-                files.write_all(bytes).expect("自动写入配置文件夹失败");
-                String::new()
-            }
+            Err(_) => "失败".to_string(),
         },
     };
     let user_config: Config = match serde_yaml::from_str(&config) {
@@ -68,13 +62,13 @@ fn encrypt(password: &str) -> anyhow::Result<String> {
     Ok(vec_to_string)
 }
 
-pub async fn log_in() -> anyhow::Result<String> {
+pub async fn log_in() -> anyhow::Result<(String, String)> {
     let (acc, password) = read_account()?;
     let acc = &acc;
     let encrypt_password = encrypt(&password)?;
-    let url = "***REMOVED***auth/hrbeu/login";
+    let url = "***REMOVED***auth/login";
 
-    let auth = loop {
+    let (auth, batchid) = loop {
         let (uuid, captcha) = get_uuid_captcha().await?;
         let payload = [
             ("loginname", acc),
@@ -92,19 +86,31 @@ pub async fn log_in() -> anyhow::Result<String> {
             .await?;
 
         let json_body: serde_json::Value = response.json().await?;
+
+        let batchid = json_body["data"]["student"]["hrbeuLcMap"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .next()
+            .cloned()
+            .unwrap_or_else(|| String::from(""));
+
         match json_body["data"].as_str() {
             Some("管理员变更数据或账号在其他地方登录，请重新登录") => {
                 return Err(anyhow::anyhow!("账号在其他地方登录"));
             }
             Some("null") => continue,
-            None => continue,
+            // None => continue,
             _ => {
-                break json_body["data"]["token"]
-                    .to_string()
-                    .trim_matches('"')
-                    .to_string()
+                break (
+                    json_body["data"]["token"]
+                        .to_string()
+                        .trim_matches('"')
+                        .to_string(),
+                    batchid,
+                )
             }
         };
     };
-    Ok(auth)
+    Ok((auth, batchid))
 }

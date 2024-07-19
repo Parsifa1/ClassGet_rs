@@ -3,7 +3,7 @@ pub trait SpecializedDisplay {
     fn display(self) -> Self;
 }
 
-impl SpecializedDisplay for Result<String> {
+impl SpecializedDisplay for Result<(String, String)> {
     fn display(self) -> Self {
         self.or_else(error_handler)
     }
@@ -13,7 +13,7 @@ impl SpecializedDisplay for Result<Vec<String>> {
     fn display(self) -> Self {
         self.map_err(error_handler).map(|v| {
             println!("你的课程列表为：");
-            v.iter().for_each(|i| print!("{} ", i));
+            v.iter().for_each(|i| println!("{} ", i));
             v
         })
     }
