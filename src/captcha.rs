@@ -36,11 +36,7 @@ fn ocr_image(image: DynamicImage) -> anyhow::Result<String> {
     let mut ocr = ddddocr::ddddocr_classification().expect("dddd失败");
     let mut img_raw = Cursor::new(Vec::new());
     image.write_to(&mut img_raw, Png)?;
-    // image.save("test.png")?;
-    // let image = std::fs::read("test.png")?;
     ocr.classification(img_raw.into_inner(), false)
-        .expect("ocr失败");
-    Ok("1".to_string())
 }
 
 pub async fn get_uuid_captcha() -> anyhow::Result<(String, String)> {
@@ -54,7 +50,6 @@ pub async fn get_uuid_captcha() -> anyhow::Result<(String, String)> {
         .send()
         .await?;
     let json_body: serde_json::Value = response.json().await?;
-
     let capt_name = json_body["data"]["captcha"].as_str();
     let capt_uuid = json_body["data"]["uuid"].as_str();
 

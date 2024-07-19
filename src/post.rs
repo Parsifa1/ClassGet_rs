@@ -1,5 +1,7 @@
 use std::fmt;
 
+use crate::ClassPara;
+
 #[derive(Debug)]
 pub struct ClassError {
     pub value: usize,
@@ -26,14 +28,12 @@ pub async fn print_all_class(data_json: &serde_json::Value) -> anyhow::Result<Ve
     if formatted_strings.is_empty() {
         return Err(anyhow::anyhow!("未能成功获取课程列表"));
     }
-
     Ok(formatted_strings)
 }
 
 pub async fn get_class(
     num: usize,
-    auth: String,
-    batchid: String,
+    classpara: ClassPara,
     data_json: serde_json::Value,
 ) -> anyhow::Result<()> {
     if num == 0 {
@@ -53,8 +53,8 @@ pub async fn get_class(
     }
     loop {
         let mut header = reqwest::header::HeaderMap::new();
-        header.insert("authorization", auth.parse()?);
-        header.insert("batchid", batchid.parse()?);
+        header.insert("authorization", classpara.auth.parse()?);
+        header.insert("batchid", classpara.batchid.parse()?);
         let response = reqwest::Client::builder()
             .danger_accept_invalid_certs(true)
             .build()

@@ -1,9 +1,10 @@
 use anyhow::Result;
+use crate::ClassPara;
 pub trait SpecializedDisplay {
     fn display(self) -> Self;
 }
 
-impl SpecializedDisplay for Result<(String, String)> {
+impl SpecializedDisplay for Result<ClassPara> {
     fn display(self) -> Self {
         self.or_else(error_handler)
     }
@@ -24,12 +25,13 @@ impl SpecializedDisplay for Result<Vec<usize>> {
         self.map_err(error_handler).map(|v| {
             println!("你选择的课程为：");
             v.iter().for_each(|i| print!("{} ", i));
+            println!();
             v
         })
     }
 }
 
 fn error_handler<T>(error: anyhow::Error) -> T {
-    println!("{}, 请检查配置文件，并重启程序", error);
+    println!("{}", error);
     std::process::exit(1);
 }

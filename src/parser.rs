@@ -1,4 +1,6 @@
-pub async fn get_data(auth: &str, batchid: &str) -> anyhow::Result<serde_json::Value> {
+use crate::ClassPara;
+
+pub async fn get_data(classpara: &ClassPara) -> anyhow::Result<serde_json::Value> {
     let url = "***REMOVED***elective/clazz/list";
     let data = r#"{"teachingClassType":"XGKC","pageNumber":1,"pageSize":1000,"orderBy":"","campus":"01","SFCT":"0"}"#;
 
@@ -6,8 +8,8 @@ pub async fn get_data(auth: &str, batchid: &str) -> anyhow::Result<serde_json::V
 
     let json_body = loop {
         let mut header = reqwest::header::HeaderMap::new();
-        header.insert("authorization", auth.parse()?);
-        header.insert("batchid", batchid.parse()?);
+        header.insert("authorization", classpara.auth.parse()?);
+        header.insert("batchid", classpara.batchid.parse()?);
 
         let response = reqwest::Client::builder()
             .danger_accept_invalid_certs(true)
