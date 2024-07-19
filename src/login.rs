@@ -89,7 +89,7 @@ pub async fn log_in() -> anyhow::Result<(String, String)> {
 
         let batchid = json_body["data"]["student"]["hrbeuLcMap"]
             .as_object()
-            .unwrap()
+            .expect("batchid获取失败")
             .keys()
             .next()
             .cloned()
