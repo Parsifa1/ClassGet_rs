@@ -28,7 +28,7 @@ fn save_image_from_data_uri(data_uri: Option<&str>) -> anyhow::Result<()> {
 fn ocr_image() -> anyhow::Result<String> {
     let image = std::fs::read("output.png")?;
     let mut ocr = ddddocr::ddddocr_classification()?;
-    let res = ocr.classification(image);
+    let res = ocr.classification(image, false);
     std::fs::remove_file("output.png")?;
     res
 }

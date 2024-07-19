@@ -52,6 +52,7 @@ async fn main() -> anyhow::Result<()> {
     )?;
 
     let auth = log_in().await.display()?;
+    println!("{}\n", auth);
     let data_json = get_data(&auth).await?;
     print_all_class(&data_json).await.display()?;
 
