@@ -1,3 +1,5 @@
+use serde_json::Value;
+
 use crate::ClassPara;
 
 pub async fn get_data(classpara: &ClassPara) -> anyhow::Result<serde_json::Value> {
@@ -21,14 +23,16 @@ pub async fn get_data(classpara: &ClassPara) -> anyhow::Result<serde_json::Value
             .send()
             .await?;
 
-        let json_raw: serde_json::Value = response
-            .json()
-            .await
-            .expect("response无法解析，请检查返回请求");
-
-        match json_raw["code"].as_str() {
-            Some("401") => continue,
-            _ => break json_raw,
+        match response.json::<Value>().await {
+            Ok(json) => {
+                if let Some(code) = json["code"].as_str() {
+                    if code == "401" {
+                        continue; // 如果 code 是 401，继续循环
+                    }
+                }
+                break json; // 如果 code 不是 401，退出循环并返回 json
+            }
+            Err(_) => continue, // 失败时继续循环
         }
     };
 
