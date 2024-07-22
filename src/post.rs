@@ -1,5 +1,7 @@
 use std::fmt;
 
+use anyhow::anyhow;
+
 use crate::ClassPara;
 
 #[derive(Debug)]
@@ -65,10 +67,16 @@ pub async fn get_class(
             .send()
             .await?;
 
+        tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
+
         let json_body: serde_json::Value = response.json().await?;
-        let kcm = &data_json["data"]["rows"][num]["KCM"];
-        let xgxklb = &data_json["data"]["rows"][num]["XGXKLB"];
-        let msg = &json_body["msg"];
+        let kcm = &data_json["data"]["rows"][num]["KCM"]
+            .as_str()
+            .ok_or(anyhow!("转换失败"))?;
+        let xgxklb = &data_json["data"]["rows"][num]["XGXKLB"]
+            .as_str()
+            .ok_or(anyhow!("转换失败"))?;
+        let msg = &json_body["msg"].as_str().ok_or(anyhow!("转换失败"))?;
 
         match json_body["msg"].as_str() {
             Some("参数校验不通过") | Some("教学任务信息过期，请重新刷新列表") =>
@@ -78,13 +86,11 @@ pub async fn get_class(
             }
             Some("请求过快，请登录后再试") => {}
             Some("该课程已在选课结果中") => {
-                log::info!("{}", msg);
-                log::info!("{} {}", kcm, xgxklb);
+                log::info!("{} {} {} {}", "SUCSESS!", kcm, xgxklb, msg);
                 break;
             }
             _ => {
-                println!("{} {}", kcm, xgxklb);
-                println!("{}", msg);
+                log::info!("{} {} {}", kcm, xgxklb, msg);
             }
         }
     }
