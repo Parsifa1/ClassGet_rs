@@ -86,13 +86,14 @@ pub async fn log_in() -> anyhow::Result<ClassPara> {
 
         let json_body: serde_json::Value = response.json().await?;
 
-        let batchid = json_body["data"]["student"]["hrbeuLcMap"]
-            .as_object()
-            .expect("batchid获取失败")
-            .keys()
-            .next()
-            .cloned()
-            .unwrap_or_else(|| String::from(""));
+        let batchid = "5457852c392e4fb0bc162402c1047701".to_string();
+        // let batchid = json_body["data"]["student"]["hrbeuLcMap"]
+        //     .as_object()
+        //     .expect("batchid获取失败")
+        //     .keys()
+        //     .next()
+        //     .cloned()
+        //     .unwrap_or_else(|| String::from(""));
 
         match json_body["data"].as_str() {
             Some("管理员变更数据或账号在其他地方登录，请重新登录") => {
