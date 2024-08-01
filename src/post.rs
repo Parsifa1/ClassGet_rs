@@ -35,6 +35,7 @@ pub async fn print_all_class(data_json: &serde_json::Value) -> anyhow::Result<Ve
 
 pub async fn get_class(
     num: usize,
+    urls: String,
     classpara: ClassPara,
     data_json: serde_json::Value,
 ) -> anyhow::Result<()> {
@@ -49,7 +50,7 @@ pub async fn get_class(
         ("secretVal", pram["secretVal"].as_str().unwrap_or("")),
     ];
 
-    let url = "***REMOVED***elective/clazz/add";
+    let url = urls.to_string() + "elective/clazz/add";
     if num == 0 {
         return Ok(());
     }
@@ -61,7 +62,7 @@ pub async fn get_class(
             .danger_accept_invalid_certs(true)
             .build()
             .unwrap()
-            .post(url)
+            .post(&url)
             .headers(header)
             .form(&data)
             .send()

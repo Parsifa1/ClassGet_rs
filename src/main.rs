@@ -7,7 +7,7 @@ mod post;
 use anyhow::Result;
 use display::SpecializedDisplay;
 use log::LevelFilter;
-use login::{log_in, read_class};
+use login::{log_in, read_account, read_class};
 use parser::get_data;
 use post::print_all_class;
 use serde_json::Value;
@@ -23,10 +23,20 @@ pub struct ClassPara {
     pub batchid: String,
 }
 
-async fn async_handler(class: Vec<usize>, classpara: ClassPara, data_json: Value) -> Result<()> {
+async fn async_handler(
+    urls: String,
+    class: Vec<usize>,
+    classpara: ClassPara,
+    data_json: Value,
+) -> Result<()> {
     let mut set = JoinSet::new();
     class.iter().for_each(|&i| {
-        set.spawn(post::get_class(i, classpara.clone(), data_json.clone()));
+        set.spawn(post::get_class(
+            i,
+            urls.clone(),
+            classpara.clone(),
+            data_json.clone(),
+        ));
     });
     while let Some(res) = set.join_next().await {
         let Ok(task) = res else { continue };
@@ -37,6 +47,7 @@ async fn async_handler(class: Vec<usize>, classpara: ClassPara, data_json: Value
                     Some(my_error) => my_error.value,
                     _ => 0,
                 },
+                urls.clone(),
                 classpara.clone(),
                 data_json.clone(),
             ));
@@ -65,15 +76,16 @@ async fn main() -> Result<()> {
         ),
     ]);
 
-    let para = log_in().await.display()?;
-    let data_json = get_data(&para).await?;
+    let urls = read_account(true)?.1;
+    let para = log_in(&urls).await.display()?;
+    let data_json = get_data(&para, &urls).await?;
     print_all_class(&data_json).await.display()?;
 
     println!("按回车键继续...");
     std::io::stdin().read_line(&mut String::new())?;
 
     let class = read_class().display()?;
-    async_handler(class, para.clone(), data_json.clone()).await?;
+    async_handler(urls, class, para.clone(), data_json.clone()).await?;
 
     Ok(())
 }

@@ -2,8 +2,8 @@ use serde_json::Value;
 
 use crate::ClassPara;
 
-pub async fn get_data(classpara: &ClassPara) -> anyhow::Result<serde_json::Value> {
-    let url = "***REMOVED***elective/clazz/list";
+pub async fn get_data(classpara: &ClassPara, urls: &str) -> anyhow::Result<serde_json::Value> {
+    let url = urls.to_string() + "elective/clazz/list";
     let data = r#"{"teachingClassType":"XGKC","pageNumber":1,"pageSize":1000,"orderBy":"","campus":"01","SFCT":"0"}"#;
 
     let json: serde_json::Value = serde_json::from_str(data)?;
@@ -17,7 +17,7 @@ pub async fn get_data(classpara: &ClassPara) -> anyhow::Result<serde_json::Value
             .danger_accept_invalid_certs(true)
             .build()
             .unwrap()
-            .post(url)
+            .post(&url)
             .headers(header)
             .json(&json)
             .send()

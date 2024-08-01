@@ -39,14 +39,14 @@ fn ocr_image(image: DynamicImage) -> anyhow::Result<String> {
     ocr.classification(img_raw.into_inner(), false)
 }
 
-pub async fn get_uuid_captcha() -> anyhow::Result<(String, String)> {
-    let url = "***REMOVED***auth/captcha";
+pub async fn get_uuid_captcha(urls: &String) -> anyhow::Result<(String, String)> {
+    let url = urls.to_string() + "auth/captcha";
 
     let response = reqwest::Client::builder()
         .danger_accept_invalid_certs(true)
         .build()
         .unwrap()
-        .post(url)
+        .post(&url)
         .send()
         .await?;
     let json_body: serde_json::Value = response.json().await?;

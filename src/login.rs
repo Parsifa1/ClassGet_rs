@@ -9,6 +9,7 @@ pub struct Config {
     pub account: String,
     pub password: String,
     pub class: Vec<usize>,
+    pub url: String,
 }
 
 pub fn read_class() -> anyhow::Result<Vec<usize>> {
@@ -31,13 +32,13 @@ pub fn read_class() -> anyhow::Result<Vec<usize>> {
     Ok(user_config.class)
 }
 
-fn read_account() -> anyhow::Result<(String, String)> {
+pub fn read_account(for_url: bool) -> anyhow::Result<(String, String)> {
     let config_in = std::fs::read_to_string("config.yaml");
 
     let create_default_config = || -> String {
         let mut file =
             std::fs::File::create("config.yaml").expect("自动创建空配置文件夹失败，请检查文件权限");
-        let bytes = b"account: 114514\npassword: 1919810\nclass: [1, 1, 4, 5, 1, 4]";
+        let bytes = b"account: 114514\npassword: 1919810\nclass: [1, 1, 4, 5, 1, 4]\nurl: https://abc.def.edu.cn/xsxk/";
         file.write_all(bytes)
             .expect("自动写入配置文件夹失败，请检查写入权限");
         String::new()
@@ -48,6 +49,9 @@ fn read_account() -> anyhow::Result<(String, String)> {
     let user_config: Config = serde_yaml::from_str(&config).map_err(|_| {
         anyhow::anyhow!("配置文件读取失败，请检查是否存在配置文件，若不存在，将会自动创建")
     })?;
+    if for_url {
+        return Ok((user_config.url, "".to_string()));
+    }
     Ok((user_config.account, user_config.password))
 }
 
@@ -61,14 +65,14 @@ fn encrypt(password: &str) -> anyhow::Result<String> {
     Ok(vec_to_string)
 }
 
-pub async fn log_in() -> anyhow::Result<ClassPara> {
-    let (acc, password) = read_account()?;
+pub async fn log_in(urls: &str) -> anyhow::Result<ClassPara> {
+    let (acc, password) = read_account(false)?;
     let acc = &acc;
     let encrypt_password = encrypt(&password)?;
-    let url = "***REMOVED***auth/login";
+    let url = urls.to_string() + "auth/login";
 
     let (auth, batchid) = loop {
-        let (uuid, captcha) = get_uuid_captcha().await?;
+        let (uuid, captcha) = get_uuid_captcha(&url).await?;
         let payload = [
             ("loginname", acc),
             ("password", &encrypt_password),
@@ -79,7 +83,7 @@ pub async fn log_in() -> anyhow::Result<ClassPara> {
             .danger_accept_invalid_certs(true)
             .build()
             .unwrap()
-            .post(url)
+            .post(&url)
             .form(&payload)
             .send()
             .await?;
@@ -87,13 +91,6 @@ pub async fn log_in() -> anyhow::Result<ClassPara> {
         let json_body: serde_json::Value = response.json().await?;
 
         let batchid = "5457852c392e4fb0bc162402c1047701".to_string();
-        // let batchid = json_body["data"]["student"]["hrbeuLcMap"]
-        //     .as_object()
-        //     .expect("batchid获取失败")
-        //     .keys()
-        //     .next()
-        //     .cloned()
-        //     .unwrap_or_else(|| String::from(""));
 
         match json_body["data"].as_str() {
             Some("管理员变更数据或账号在其他地方登录，请重新登录") => {
