@@ -16,7 +16,7 @@ impl fmt::Display for ClassError {
 }
 impl std::error::Error for ClassError {}
 
-pub async fn print_all_class(data_json: &serde_json::Value) -> anyhow::Result<Vec<String>> {
+pub async fn fetch_all_class(data_json: &serde_json::Value) -> anyhow::Result<Vec<String>> {
     let num = &data_json["data"]["total"].as_u64().unwrap_or(0);
     let mut formatted_strings = Vec::new();
     let num = *num as usize;

@@ -16,4 +16,5 @@
 account: 114514
 password: 1919810
 class: [1, 1, 4, 5, 1, 4]
+url: https://aaa.bbb.edu.cn/xsxk/
 ```

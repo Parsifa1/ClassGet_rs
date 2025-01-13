@@ -12,21 +12,19 @@ impl SpecializedDisplay for Result<ClassPara> {
 
 impl SpecializedDisplay for Result<Vec<String>> {
     fn display(self) -> Self {
-        self.map_err(error_handler).map(|v| {
+        self.map_err(error_handler).inspect(|v| {
             println!("你的课程列表为：");
             v.iter().for_each(|i| println!("{} ", i));
-            v
         })
     }
 }
 
 impl SpecializedDisplay for Result<Vec<usize>> {
     fn display(self) -> Self {
-        self.map_err(error_handler).map(|v| {
+        self.map_err(error_handler).inspect(|v| {
             println!("你选择的课程为：");
             v.iter().for_each(|i| print!("{} ", i));
             println!();
-            v
         })
     }
 }

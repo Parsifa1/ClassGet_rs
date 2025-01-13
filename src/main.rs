@@ -9,7 +9,7 @@ use display::SpecializedDisplay;
 use log::LevelFilter;
 use login::{log_in, read_account, read_class};
 use parser::get_data;
-use post::print_all_class;
+use post::fetch_all_class;
 use serde_json::Value;
 use simplelog::{
     ColorChoice, CombinedLogger, ConfigBuilder, TermLogger, TerminalMode, WriteLogger,
@@ -76,10 +76,10 @@ async fn main() -> Result<()> {
         ),
     ]);
 
-    let urls = read_account(true)?.1;
+    let urls = read_account(true)?.0;
     let para = log_in(&urls).await.display()?;
     let data_json = get_data(&para, &urls).await?;
-    print_all_class(&data_json).await.display()?;
+    fetch_all_class(&data_json).await.display()?;
 
     println!("按回车键继续...");
     std::io::stdin().read_line(&mut String::new())?;
