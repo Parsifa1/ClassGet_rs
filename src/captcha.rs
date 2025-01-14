@@ -2,6 +2,7 @@ use anyhow::anyhow;
 use base64::{engine::general_purpose, Engine as _};
 use image::DynamicImage;
 use image::ImageOutputFormat::Png;
+use log::info;
 use std::io::Cursor;
 
 fn save_image_from_data_uri(data_uri: Option<&str>) -> anyhow::Result<DynamicImage> {
@@ -42,22 +43,34 @@ fn ocr_image(image: DynamicImage) -> anyhow::Result<String> {
 pub async fn get_uuid_captcha(urls: &String) -> anyhow::Result<(String, String)> {
     let url = urls.to_string() + "auth/captcha";
 
-    let response = reqwest::Client::builder()
-        .danger_accept_invalid_certs(true)
-        .build()
-        .unwrap()
-        .post(&url)
-        .send()
-        .await?;
-    let json_body: serde_json::Value = response.json().await?;
-    let capt_name = json_body["data"]["captcha"].as_str();
-    let capt_uuid = json_body["data"]["uuid"].as_str();
+    loop {
+        match async {
+            let response = reqwest::Client::builder()
+                .danger_accept_invalid_certs(true)
+                .build()
+                .unwrap()
+                .post(&url)
+                .send()
+                .await?;
+            let json_body: serde_json::Value = response.json().await?;
+            let capt_name = json_body["data"]["captcha"].as_str();
+            let capt_uuid = json_body["data"]["uuid"].as_str();
 
-    let image = save_image_from_data_uri(capt_name)?;
+            let image = save_image_from_data_uri(capt_name)?;
+            let captcha = ocr_image(image)?;
 
-    let captcha = ocr_image(image)?;
-
-    capt_uuid
-        .map(|uuid| (uuid.to_string(), captcha))
-        .ok_or(anyhow::anyhow!("Failed to get captcha"))
+            capt_uuid
+                .map(|uuid| (uuid.to_string(), captcha))
+                .ok_or(anyhow::anyhow!("Failed to get captcha"))
+        }
+        .await
+        {
+            Ok(result) => break Ok(result),
+            Err(e) => {
+                info!("获取验证码失败: {}，正在重试...", e);
+                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                continue;
+            }
+        }
+    }
 }

@@ -1,5 +1,6 @@
 use crate::{captcha::get_uuid_captcha, ClassPara};
 use base64::{engine::general_purpose, Engine as _};
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use soft_aes::aes::aes_enc_ecb;
 use std::io::Write;
@@ -67,46 +68,62 @@ fn encrypt(password: &str) -> anyhow::Result<String> {
 
 pub async fn log_in(urls: &str) -> anyhow::Result<ClassPara> {
     let (acc, password) = read_account(false)?;
+    info!("正在登录{}", acc);
     let acc = &acc;
     let encrypt_password = encrypt(&password)?;
     let url = urls.to_string() + "auth/login";
+    let batchid = "c3a1f846edad4b5282e8d3ce44e3fd68".to_string();
 
     let (auth, batchid) = loop {
-        let (uuid, captcha) = get_uuid_captcha(&url).await?;
-        let payload = [
-            ("loginname", acc),
-            ("password", &encrypt_password),
-            ("captcha", &captcha),
-            ("uuid", &uuid),
-        ];
-        let response = reqwest::Client::builder()
-            .danger_accept_invalid_certs(true)
-            .build()
-            .unwrap()
-            .post(&url)
-            .form(&payload)
-            .send()
-            .await?;
+        match async {
+            let (uuid, captcha) = get_uuid_captcha(&urls.to_string()).await?;
+            let payload = [
+                ("loginname", acc),
+                ("password", &encrypt_password),
+                ("captcha", &captcha),
+                ("uuid", &uuid),
+            ];
+            debug!("{}", acc);
+            debug!("{}", &encrypt_password);
+            debug!("{}", &captcha);
+            debug!("{}", &uuid);
 
-        let json_body: serde_json::Value = response.json().await?;
+            let response = reqwest::Client::builder()
+                .danger_accept_invalid_certs(true)
+                .build()
+                .unwrap()
+                .post(&url)
+                .form(&payload)
+                .send()
+                .await?;
 
-        let batchid = "5457852c392e4fb0bc162402c1047701".to_string();
+            let json_body: serde_json::Value = response.json().await?;
 
-        match json_body["data"].as_str() {
-            Some("管理员变更数据或账号在其他地方登录，请重新登录") => {
-                return Err(anyhow::anyhow!("账号在其他地方登录"));
-            }
-            Some("null") => continue,
-            _ => {
-                break (
-                    json_body["data"]["token"]
+            match json_body["data"].as_str() {
+                Some("管理员变更数据或账号在其他地方登录，请重新登录") => {
+                    anyhow::bail!("账号在其他地方登录");
+                }
+                Some("null") => {
+                    anyhow::bail!("验证码错误");
+                }
+                _ => {
+                    let auth = json_body["data"]["token"]
                         .to_string()
                         .trim_matches('"')
-                        .to_string(),
-                    batchid,
-                )
+                        .to_string();
+                    Ok((auth, batchid.clone()))
+                }
             }
-        };
+        }
+        .await
+        {
+            Ok(result) => break result,
+            Err(e) => {
+                info!("登录失败: {}，正在重试...", e);
+                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                continue;
+            }
+        }
     };
     Ok(ClassPara { auth, batchid })
 }

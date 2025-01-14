@@ -45,7 +45,7 @@ async fn async_handler(
             set.spawn(post::get_class(
                 match e.downcast_ref::<crate::post::ClassError>() {
                     Some(my_error) => my_error.value,
-                    _ => 0,
+                    _ => 1,
                 },
                 urls.clone(),
                 classpara.clone(),
@@ -64,7 +64,7 @@ async fn main() -> Result<()> {
 
     let _ = CombinedLogger::init(vec![
         TermLogger::new(
-            LevelFilter::Info,
+            LevelFilter::Debug,
             config.clone(),
             TerminalMode::Mixed,
             ColorChoice::Auto,
