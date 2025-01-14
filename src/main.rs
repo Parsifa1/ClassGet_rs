@@ -6,7 +6,7 @@ mod post;
 
 use anyhow::Result;
 use display::SpecializedDisplay;
-use log::{debug, LevelFilter};
+use log::{info, warn, LevelFilter};
 use login::{log_in, read_account, read_class};
 use parser::get_data;
 use post::fetch_all_class;
@@ -28,6 +28,7 @@ async fn async_handler(
     class: Vec<usize>,
     classpara: ClassPara,
     data_json: Value,
+    is_tjkc: bool,
 ) -> Result<()> {
     let mut set = JoinSet::new();
     class.iter().for_each(|&i| {
@@ -36,10 +37,11 @@ async fn async_handler(
             urls.clone(),
             classpara.clone(),
             data_json.clone(),
+            is_tjkc,
         ));
     });
     while let Some(res) = set.join_next().await {
-        debug!("当前同时工作选课协程数: {}", set.len());
+        warn!("当前同时工作选课协程数: {}", set.len());
         let Ok(task) = res else { continue };
         if let Err(e) = task {
             // let data_update = parser::get_data(&classpara).await?;
@@ -51,6 +53,7 @@ async fn async_handler(
                 urls.clone(),
                 classpara.clone(),
                 data_json.clone(),
+                is_tjkc,
             ));
         }
     }
@@ -78,15 +81,20 @@ async fn main() -> Result<()> {
     ]);
 
     let urls = read_account(true)?.0;
+    let classtype = read_account(true)?.1;
+
+    let is_tjkc = classtype == "TJKC";
+    info!("classtype: {}", classtype);
+
     let para = log_in(&urls).await.display()?;
-    let data_json = get_data(&para, &urls).await?;
-    fetch_all_class(&data_json).await.display()?;
+    let data_json = get_data(&para, &urls, is_tjkc).await?;
+    fetch_all_class(&data_json, is_tjkc).await.display()?;
 
     println!("按回车键继续...");
     std::io::stdin().read_line(&mut String::new())?;
 
     let class = read_class().display()?;
-    async_handler(urls, class, para.clone(), data_json.clone()).await?;
+    async_handler(urls, class, para.clone(), data_json.clone(), is_tjkc).await?;
 
     Ok(())
 }

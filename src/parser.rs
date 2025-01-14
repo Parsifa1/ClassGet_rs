@@ -3,11 +3,21 @@ use serde_json::Value;
 
 use crate::ClassPara;
 
-pub async fn get_data(classpara: &ClassPara, urls: &str) -> anyhow::Result<serde_json::Value> {
+pub async fn get_data(
+    classpara: &ClassPara,
+    urls: &str,
+    is_tjkc: bool,
+) -> anyhow::Result<serde_json::Value> {
     let url = urls.to_string() + "elective/clazz/list";
-    let data = r#"{"teachingClassType":"XGKC","pageNumber":1,"pageSize":1000,"orderBy":"","campus":"01","SFCT":"0"}"#;
-
-    let json: serde_json::Value = serde_json::from_str(data)?;
+    let xg_data = r#"{"teachingClassType":"XGKC","pageNumber":1,"pageSize":1000,"orderBy":"","campus":"01","SFCT":"0"}"#;
+    let tj_data = r#"{"teachingClassType":"TJKC","pageNumber":1,"pageSize":1000,"orderBy":"","campus":"01","SFCT":"0"}"#;
+    let json: serde_json::Value = if is_tjkc {
+        info!("正在获取专选课程列表");
+        serde_json::from_str(tj_data)?
+    } else {
+        info!("正在获取公选课程列表");
+        serde_json::from_str(xg_data)?
+    };
 
     loop {
         match async {

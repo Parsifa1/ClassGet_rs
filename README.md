@@ -1,4 +1,4 @@
-# HEU抢课脚本 in Rust
+# H*U抢课脚本 in Rust
 
 ## TODO:
 
@@ -16,5 +16,6 @@
 account: 114514
 password: 1919810
 class: [1, 1, 4, 5, 1, 4]
+classtype: XGKC #TJKC or XGKC
 url: https://aaa.bbb.edu.cn/xsxk/
 ```

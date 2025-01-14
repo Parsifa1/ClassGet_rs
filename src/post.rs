@@ -1,8 +1,7 @@
 use std::fmt;
 
-use anyhow::{anyhow, bail};
-
 use crate::ClassPara;
+use anyhow::{anyhow, bail};
 
 #[derive(Debug)]
 pub struct ClassError {
@@ -16,14 +15,18 @@ impl fmt::Display for ClassError {
 }
 impl std::error::Error for ClassError {}
 
-pub async fn fetch_all_class(data_json: &serde_json::Value) -> anyhow::Result<Vec<String>> {
+pub async fn fetch_all_class(
+    data_json: &serde_json::Value,
+    is_tjkc: bool,
+) -> anyhow::Result<Vec<String>> {
     let num = &data_json["data"]["total"].as_u64().unwrap_or(0);
     let mut formatted_strings = Vec::new();
+    let arg_secend = if is_tjkc { "KCLB" } else { "XGXKLB" };
     let num = *num as usize;
     for i in 1..num {
         let formatted_str = format!(
-            "{}: {} {}",
-            i, data_json["data"]["rows"][i]["KCM"], data_json["data"]["rows"][i]["XGXKLB"]
+            "{}: {}  {}",
+            i, data_json["data"]["rows"][i]["KCM"], data_json["data"]["rows"][i][arg_secend]
         );
         formatted_strings.push(formatted_str);
     }
@@ -38,17 +41,29 @@ pub async fn get_class(
     urls: String,
     classpara: ClassPara,
     data_json: serde_json::Value,
+    is_tjkc: bool,
 ) -> anyhow::Result<()> {
     if num == 0 {
         return Ok(());
     }
     let pram = &data_json["data"]["rows"][num];
 
-    let data = [
-        ("clazzType", "XGKC"),
-        ("clazzId", pram["JXBID"].as_str().unwrap_or("")),
-        ("secretVal", pram["secretVal"].as_str().unwrap_or("")),
-    ];
+    let data = if is_tjkc {
+        [
+            ("clazzType", "TJKC"),
+            ("clazzId", pram["tcList"][0]["JXBID"].as_str().unwrap_or("")),
+            (
+                "secretVal",
+                pram["tcList"][0]["secretVal"].as_str().unwrap_or(""),
+            ),
+        ]
+    } else {
+        [
+            ("clazzType", "XGKC"),
+            ("clazzId", pram["JXBID"].as_str().unwrap_or("")),
+            ("secretVal", pram["secretVal"].as_str().unwrap_or("")),
+        ]
+    };
 
     let url = urls.to_string() + "elective/clazz/add";
     loop {
@@ -67,15 +82,24 @@ pub async fn get_class(
                 .await?;
 
             // 延时
-            // tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
+            tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
 
             let json_body: serde_json::Value = response.json().await?;
+
+            // log::info!("{}", json_body);
+
             let kcm = &data_json["data"]["rows"][num]["KCM"]
                 .as_str()
-                .ok_or(anyhow!("转换失败"))?;
-            let xgxklb = &data_json["data"]["rows"][num]["XGXKLB"]
-                .as_str()
-                .ok_or(anyhow!("转换失败"))?;
+                .ok_or(anyhow!("kcm转换失败"))?;
+            let xgxklb = if is_tjkc {
+                data_json["data"]["rows"][num]["KCLB"]
+                    .as_str()
+                    .ok_or(anyhow!("kclb转换失败"))?
+            } else {
+                data_json["data"]["rows"][num]["XGXKLB"]
+                    .as_str()
+                    .ok_or(anyhow!("kcm转换失败"))?
+            };
             let msg = json_body["msg"].to_string();
 
             match json_body["msg"].as_str() {
@@ -105,8 +129,8 @@ pub async fn get_class(
                 break;
             }
             Err(e) => {
-                if e.to_string() == "请登录" {
-                    bail!(e);
+                if e.to_string().contains("转换失败") {
+                    log::warn!("{}", e);
                 }
                 continue;
             }
