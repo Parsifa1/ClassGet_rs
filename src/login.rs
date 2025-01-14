@@ -11,6 +11,7 @@ pub struct Config {
     pub password: String,
     pub class: Vec<usize>,
     pub url: String,
+    pub classtype: String,
 }
 
 pub fn read_class() -> anyhow::Result<Vec<usize>> {
@@ -33,7 +34,7 @@ pub fn read_class() -> anyhow::Result<Vec<usize>> {
     Ok(user_config.class)
 }
 
-pub fn read_account(for_url: bool) -> anyhow::Result<(String, String)> {
+pub fn read_account(for_url_kc: bool) -> anyhow::Result<(String, String)> {
     let config_in = std::fs::read_to_string("config.yaml");
 
     let create_default_config = || -> String {
@@ -50,8 +51,8 @@ pub fn read_account(for_url: bool) -> anyhow::Result<(String, String)> {
     let user_config: Config = serde_yaml::from_str(&config).map_err(|_| {
         anyhow::anyhow!("配置文件读取失败，请检查是否存在配置文件，若不存在，将会自动创建")
     })?;
-    if for_url {
-        return Ok((user_config.url, "".to_string()));
+    if for_url_kc {
+        return Ok((user_config.url, user_config.classtype));
     }
     Ok((user_config.account, user_config.password))
 }

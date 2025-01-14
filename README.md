@@ -1,9 +1,10 @@
-# HEU抢课脚本 in Rust
+# H*U抢课脚本 in Rust
 
 ## TODO:
 
 - [x] 配置文件读取个人信息（账号，密码，课程编号等等）
 - [x] 优化 log，记录下已经抢到的课程以及对应账号
+- [x] 可以选择公选或专选
 - [ ] 实现一个图形化界面
 
 ## 配置文件:
@@ -16,5 +17,6 @@
 account: 114514
 password: 1919810
 class: [1, 1, 4, 5, 1, 4]
+classtype: XGKC #TJKC(专选) or XGKC(公选)
 url: https://aaa.bbb.edu.cn/xsxk/
 ```
