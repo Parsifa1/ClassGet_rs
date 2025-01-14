@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use base64::{engine::general_purpose, Engine as _};
 use image::DynamicImage;
-use image::ImageOutputFormat::Png;
+use image::ImageFormat::Png;
 use log::info;
 use std::io::Cursor;
 
