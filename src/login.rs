@@ -68,26 +68,26 @@ fn encrypt(password: &str) -> anyhow::Result<String> {
 
 pub async fn log_in(urls: &str) -> anyhow::Result<ClassPara> {
     let (acc, password) = read_account(false)?;
-    info!("正在登录{}", acc);
+    info!("正在登录: {}", acc);
     let acc = &acc;
     let encrypt_password = encrypt(&password)?;
     let url = urls.to_string() + "auth/login";
     let batchid = "c3a1f846edad4b5282e8d3ce44e3fd68".to_string();
 
+    let (uuid, captcha) = get_uuid_captcha(&urls.to_string()).await?;
+    let payload = [
+        ("loginname", acc),
+        ("password", &encrypt_password),
+        ("captcha", &captcha),
+        ("uuid", &uuid),
+    ];
+
+    debug!("{}", acc);
+    debug!("{}", &encrypt_password);
+    debug!("{}", &captcha);
+    debug!("{}", &uuid);
     let (auth, batchid) = loop {
         match async {
-            let (uuid, captcha) = get_uuid_captcha(&urls.to_string()).await?;
-            let payload = [
-                ("loginname", acc),
-                ("password", &encrypt_password),
-                ("captcha", &captcha),
-                ("uuid", &uuid),
-            ];
-            debug!("{}", acc);
-            debug!("{}", &encrypt_password);
-            debug!("{}", &captcha);
-            debug!("{}", &uuid);
-
             let response = reqwest::Client::builder()
                 .danger_accept_invalid_certs(true)
                 .build()
@@ -119,7 +119,7 @@ pub async fn log_in(urls: &str) -> anyhow::Result<ClassPara> {
         {
             Ok(result) => break result,
             Err(e) => {
-                info!("登录失败: {}，正在重试...", e);
+                info!("登录失败: {}", e);
                 tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
                 continue;
             }

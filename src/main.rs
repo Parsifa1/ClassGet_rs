@@ -64,13 +64,13 @@ async fn main() -> Result<()> {
 
     let _ = CombinedLogger::init(vec![
         TermLogger::new(
-            LevelFilter::Debug,
+            LevelFilter::Info,
             config.clone(),
             TerminalMode::Mixed,
             ColorChoice::Auto,
         ),
         WriteLogger::new(
-            LevelFilter::Info,
+            LevelFilter::Debug,
             config.clone(),
             File::create("get_class.log").unwrap(),
         ),

@@ -67,7 +67,7 @@ pub async fn get_uuid_captcha(urls: &String) -> anyhow::Result<(String, String)>
         {
             Ok(result) => break Ok(result),
             Err(e) => {
-                info!("获取验证码失败: {}，正在重试...", e);
+                info!("获取验证码失败: {}", e);
                 tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
                 continue;
             }
