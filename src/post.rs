@@ -1,6 +1,6 @@
 use std::fmt;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, bail};
 
 use crate::ClassPara;
 
@@ -51,47 +51,64 @@ pub async fn get_class(
     ];
 
     let url = urls.to_string() + "elective/clazz/add";
-    if num == 0 {
-        return Ok(());
-    }
     loop {
-        let mut header = reqwest::header::HeaderMap::new();
-        header.insert("authorization", classpara.auth.parse()?);
-        header.insert("batchid", classpara.batchid.parse()?);
-        let response = reqwest::Client::builder()
-            .danger_accept_invalid_certs(true)
-            .build()
-            .unwrap()
-            .post(&url)
-            .headers(header)
-            .form(&data)
-            .send()
-            .await?;
+        match async {
+            let mut header = reqwest::header::HeaderMap::new();
+            header.insert("authorization", classpara.auth.parse()?);
+            header.insert("batchid", classpara.batchid.parse()?);
+            let response = reqwest::Client::builder()
+                .danger_accept_invalid_certs(true)
+                .build()
+                .unwrap()
+                .post(&url)
+                .headers(header)
+                .form(&data)
+                .send()
+                .await?;
 
-        tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
+            // 延时
+            // tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
 
-        let json_body: serde_json::Value = response.json().await?;
-        let kcm = &data_json["data"]["rows"][num]["KCM"]
-            .as_str()
-            .ok_or(anyhow!("转换失败"))?;
-        let xgxklb = &data_json["data"]["rows"][num]["XGXKLB"]
-            .as_str()
-            .ok_or(anyhow!("转换失败"))?;
-        let msg = &json_body["msg"].as_str().ok_or(anyhow!("转换失败"))?;
+            let json_body: serde_json::Value = response.json().await?;
+            let kcm = &data_json["data"]["rows"][num]["KCM"]
+                .as_str()
+                .ok_or(anyhow!("转换失败"))?;
+            let xgxklb = &data_json["data"]["rows"][num]["XGXKLB"]
+                .as_str()
+                .ok_or(anyhow!("转换失败"))?;
+            let msg = json_body["msg"].to_string();
 
-        match json_body["msg"].as_str() {
-            Some("参数校验不通过") | Some("教学任务信息过期，请重新刷新列表") =>
-            {
-                let e = ClassError { value: num };
-                return Err(anyhow::anyhow!(e));
+            match json_body["msg"].as_str() {
+                Some("参数校验不通过") | Some("教学任务信息过期，请重新刷新列表") =>
+                {
+                    let e = ClassError { value: num };
+                    bail!(e);
+                }
+                Some("请求过快，请登录后再试") => {
+                    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                    bail!("请登录")
+                }
+                Some("该课程已在选课结果中") => {
+                    log::info!("{} {} {} {}", "SUCSESS!", kcm, xgxklb, msg);
+                    Ok(())
+                }
+                _ => {
+                    log::info!("{} {} {}", kcm, xgxklb, msg);
+                    bail!(msg);
+                }
             }
-            Some("请求过快，请登录后再试") => {}
-            Some("该课程已在选课结果中") => {
-                log::info!("{} {} {} {}", "SUCSESS!", kcm, xgxklb, msg);
+        }
+        .await
+        {
+            Ok(_) => {
+                log::info!("{}课程选课成功", num);
                 break;
             }
-            _ => {
-                log::info!("{} {} {}", kcm, xgxklb, msg);
+            Err(e) => {
+                if e.to_string() == "请登录" {
+                    bail!(e);
+                }
+                continue;
             }
         }
     }

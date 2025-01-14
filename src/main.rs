@@ -6,7 +6,7 @@ mod post;
 
 use anyhow::Result;
 use display::SpecializedDisplay;
-use log::LevelFilter;
+use log::{debug, LevelFilter};
 use login::{log_in, read_account, read_class};
 use parser::get_data;
 use post::fetch_all_class;
@@ -39,6 +39,7 @@ async fn async_handler(
         ));
     });
     while let Some(res) = set.join_next().await {
+        debug!("当前同时工作选课协程数: {}", set.len());
         let Ok(task) = res else { continue };
         if let Err(e) = task {
             // let data_update = parser::get_data(&classpara).await?;

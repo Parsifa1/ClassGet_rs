@@ -36,7 +36,10 @@ pub async fn get_data(classpara: &ClassPara, urls: &str) -> anyhow::Result<serde
         }
         .await
         {
-            Ok(result) => break Ok(result),
+            Ok(result) => {
+                info!("获取课程列表成功");
+                break Ok(result);
+            }
             Err(e) => {
                 info!("获取课程列表失败: {}", e);
                 tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;

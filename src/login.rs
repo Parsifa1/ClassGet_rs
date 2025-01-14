@@ -117,7 +117,10 @@ pub async fn log_in(urls: &str) -> anyhow::Result<ClassPara> {
         }
         .await
         {
-            Ok(result) => break result,
+            Ok(result) => {
+                info!("登录成功");
+                break result;
+            }
             Err(e) => {
                 info!("登录失败: {}", e);
                 tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
