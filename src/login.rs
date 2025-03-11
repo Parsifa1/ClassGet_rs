@@ -1,4 +1,4 @@
-use crate::{captcha::get_uuid_captcha, ClassPara};
+use crate::{captcha::get_uuid_captcha, params::ValiPara};
 use base64::{engine::general_purpose, Engine as _};
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
@@ -67,7 +67,7 @@ fn encrypt(password: &str) -> anyhow::Result<String> {
     Ok(vec_to_string)
 }
 
-pub async fn log_in(urls: &str) -> anyhow::Result<ClassPara> {
+pub async fn log_in(urls: &str) -> anyhow::Result<ValiPara> {
     let (acc, password) = read_account(false)?;
     info!("正在登录: {}", acc);
     let acc = &acc;
@@ -129,5 +129,5 @@ pub async fn log_in(urls: &str) -> anyhow::Result<ClassPara> {
             }
         }
     };
-    Ok(ClassPara { auth, batchid })
+    Ok(ValiPara { auth, batchid })
 }

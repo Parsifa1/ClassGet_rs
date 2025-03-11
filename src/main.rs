@@ -1,67 +1,60 @@
 mod captcha;
 mod display;
 mod login;
+mod params;
 mod parser;
 mod post;
 
+use crate::params::AsyncPara;
+use crate::params::FormatData;
 use anyhow::Result;
 use display::SpecializedDisplay;
 use log::{info, warn, LevelFilter};
 use login::{log_in, read_account, read_class};
 use parser::get_data;
-use post::fetch_all_class;
-use serde_json::Value;
+use post::format_all_class;
 use simplelog::{
     ColorChoice, CombinedLogger, ConfigBuilder, TermLogger, TerminalMode, WriteLogger,
 };
 use std::fs::File;
+use std::sync::Arc;
 use tokio::task::JoinSet;
 
-#[derive(Clone)]
-pub struct ClassPara {
-    pub auth: String,
-    pub batchid: String,
-}
-
-async fn async_handler(
-    urls: String,
-    class: Vec<usize>,
-    classpara: ClassPara,
-    data_json: Value,
-    is_tjkc: bool,
-) -> Result<()> {
+async fn async_handler(async_para: AsyncPara) -> Result<()> {
     let mut set = JoinSet::new();
+    let (urls, class, classpara, data) = (
+        async_para.urls,
+        async_para.class,
+        async_para.classpara,
+        async_para.data,
+    );
     class.iter().for_each(|&i| {
         set.spawn(post::get_class(
             i,
             urls.clone(),
             classpara.clone(),
-            data_json.clone(),
-            is_tjkc,
+            data.clone(),
         ));
     });
     while let Some(res) = set.join_next().await {
         warn!("当前同时工作选课协程数: {}", set.len());
         let Ok(task) = res else { continue };
         if let Err(e) = task {
-            // let data_update = parser::get_data(&classpara).await?;
             set.spawn(post::get_class(
-                match e.downcast_ref::<crate::post::ClassError>() {
+                match e.downcast_ref::<crate::params::ClassError>() {
                     Some(my_error) => my_error.value,
                     _ => 1,
                 },
                 urls.clone(),
                 classpara.clone(),
-                data_json.clone(),
-                is_tjkc,
+                data.clone(),
             ));
         }
     }
     Ok(())
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn logging() -> Result<()> {
     let config = ConfigBuilder::new()
         .add_filter_allow("class_get".to_string())
         .build();
@@ -76,25 +69,36 @@ async fn main() -> Result<()> {
         WriteLogger::new(
             LevelFilter::Debug,
             config.clone(),
-            File::create("get_class.log").unwrap(),
+            File::create("get_class.log")?,
         ),
     ]);
+    Ok(())
+}
 
-    let urls = read_account(true)?.0;
-    let classtype = read_account(true)?.1;
+#[tokio::main]
+async fn main() -> Result<()> {
+    logging()?;
 
+    let (urls, classtype) = read_account(true)?;
     let is_tjkc = classtype == "TJKC";
     info!("classtype: {}", classtype);
 
     let para = log_in(&urls).await.display()?;
     let data_json = get_data(&para, &urls, is_tjkc).await?;
-    fetch_all_class(&data_json, is_tjkc).await.display()?;
+    let data = Arc::new(FormatData { data_json, is_tjkc });
+    format_all_class(data.clone()).await.display()?;
 
     println!("按回车键继续...");
     std::io::stdin().read_line(&mut String::new())?;
 
     let class = read_class().display()?;
-    async_handler(urls, class, para.clone(), data_json.clone(), is_tjkc).await?;
+    let para = AsyncPara {
+        urls: Arc::new(urls),
+        class: Arc::new(class),
+        classpara: Arc::new(para),
+        data,
+    };
+    async_handler(para).await?;
 
     Ok(())
 }

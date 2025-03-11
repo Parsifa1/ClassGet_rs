@@ -1,10 +1,11 @@
+use crate::params::ValiPara;
 use anyhow::Result;
-use crate::ClassPara;
+
 pub trait SpecializedDisplay {
     fn display(self) -> Self;
 }
 
-impl SpecializedDisplay for Result<ClassPara> {
+impl SpecializedDisplay for Result<ValiPara> {
     fn display(self) -> Self {
         self.or_else(error_handler)
     }

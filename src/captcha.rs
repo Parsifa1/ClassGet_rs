@@ -7,10 +7,7 @@ use std::io::Cursor;
 
 fn save_image_from_data_uri(data_uri: Option<&str>) -> anyhow::Result<DynamicImage> {
     let parse_data_uri = |uri: Option<&str>| -> Option<(String, String)> {
-        let uri = match uri {
-            Some(uri) => uri,
-            None => return None,
-        };
+        let uri = uri?;
         if let Some(pos) = uri.find(',') {
             let (mime, data) = uri.split_at(pos + 1);
             let mime = mime.trim_end_matches(',');

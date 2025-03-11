@@ -1,10 +1,10 @@
 use log::info;
 use serde_json::Value;
 
-use crate::ClassPara;
+use crate::params::ValiPara;
 
 pub async fn get_data(
-    classpara: &ClassPara,
+    classpara: &ValiPara,
     urls: &str,
     is_tjkc: bool,
 ) -> anyhow::Result<serde_json::Value> {
