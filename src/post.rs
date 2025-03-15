@@ -1,10 +1,7 @@
-use std::sync::Arc;
-
 use crate::params::{ClassError, FormatData, ValiPara};
 use anyhow::{anyhow, bail};
 
-pub async fn format_all_class(data: Arc<FormatData>) -> anyhow::Result<Vec<String>> {
-    let data = data.as_ref();
+pub async fn format_all_class(data: &FormatData) -> anyhow::Result<Vec<String>> {
     let (data_json, is_tjkc) = (&data.data_json, data.is_tjkc);
     let num = &data_json["data"]["total"].as_u64().unwrap_or(0);
     let arg_secend = if is_tjkc { "KCLB" } else { "XGXKLB" };
@@ -24,9 +21,9 @@ pub async fn format_all_class(data: Arc<FormatData>) -> anyhow::Result<Vec<Strin
 
 pub async fn get_class(
     num: usize,
-    urls: Arc<String>,
-    classpara: Arc<ValiPara>,
-    data: Arc<FormatData>,
+    urls: &str,
+    classpara: &ValiPara,
+    data: &FormatData,
 ) -> anyhow::Result<()> {
     let (data_json, is_tjkc) = (&data.data_json, data.is_tjkc);
     if num == 0 {

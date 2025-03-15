@@ -17,37 +17,29 @@ use simplelog::{
     ColorChoice, CombinedLogger, ConfigBuilder, TermLogger, TerminalMode, WriteLogger,
 };
 use std::fs::File;
-use std::sync::Arc;
 use tokio::task::JoinSet;
 
-async fn async_handler(async_para: AsyncPara) -> Result<()> {
+async fn async_handler(async_para: AsyncPara<'_>) -> Result<()> {
+    let AsyncPara {
+        urls,
+        class,
+        vali_para,
+        data,
+    } = async_para;
     let mut set = JoinSet::new();
-    let (urls, class, classpara, data) = (
-        async_para.urls,
-        async_para.class,
-        async_para.classpara,
-        async_para.data,
-    );
+    let spawn_fn = |i| post::get_class(i, urls, vali_para, data);
     class.iter().for_each(|&i| {
-        set.spawn(post::get_class(
-            i,
-            urls.clone(),
-            classpara.clone(),
-            data.clone(),
-        ));
+        set.spawn(spawn_fn(i));
     });
     while let Some(res) = set.join_next().await {
         warn!("当前同时工作选课协程数: {}", set.len());
         let Ok(task) = res else { continue };
         if let Err(e) = task {
-            set.spawn(post::get_class(
+            set.spawn(spawn_fn(
                 match e.downcast_ref::<crate::params::ClassError>() {
                     Some(my_error) => my_error.value,
                     _ => 1,
                 },
-                urls.clone(),
-                classpara.clone(),
-                data.clone(),
             ));
         }
     }
@@ -80,23 +72,25 @@ async fn main() -> Result<()> {
     logging()?;
 
     let (urls, classtype) = read_account(true)?;
+    let urls = Box::leak(Box::new(urls));
     let is_tjkc = classtype == "TJKC";
     info!("classtype: {}", classtype);
 
-    let para = log_in(&urls).await.display()?;
-    let data_json = get_data(&para, &urls, is_tjkc).await?;
-    let data = Arc::new(FormatData { data_json, is_tjkc });
-    format_all_class(data.clone()).await.display()?;
+    let para = log_in(urls).await.display()?;
+    let vali_para = Box::leak(Box::new(para));
+    let data_json = Box::leak(Box::new(get_data(vali_para, urls, is_tjkc).await?));
+    let data = Box::leak(Box::new(FormatData { data_json, is_tjkc }));
+    format_all_class(data).await.display()?;
 
     println!("按回车键继续...");
     std::io::stdin().read_line(&mut String::new())?;
 
-    let class = read_class().display()?;
+    let class = Box::leak(Box::new(read_class().display()?));
     let para = AsyncPara {
-        urls: Arc::new(urls),
-        class: Arc::new(class),
-        classpara: Arc::new(para),
+        urls,
         data,
+        class,
+        vali_para,
     };
     async_handler(para).await?;
 
