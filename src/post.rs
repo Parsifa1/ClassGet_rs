@@ -1,7 +1,7 @@
 use crate::params::{ClassError, FormatData, ValiPara};
 use anyhow::{anyhow, bail};
 
-pub async fn format_all_class(data: &FormatData) -> anyhow::Result<Vec<String>> {
+pub async fn format_all_class(data: &FormatData<'_>) -> anyhow::Result<Vec<String>> {
     let (data_json, is_tjkc) = (&data.data_json, data.is_tjkc);
     let num = &data_json["data"]["total"].as_u64().unwrap_or(0);
     let arg_secend = if is_tjkc { "KCLB" } else { "XGXKLB" };
@@ -23,7 +23,7 @@ pub async fn get_class(
     num: usize,
     urls: &str,
     classpara: &ValiPara,
-    data: &FormatData,
+    data: &FormatData<'_>,
 ) -> anyhow::Result<()> {
     let (data_json, is_tjkc) = (&data.data_json, data.is_tjkc);
     if num == 0 {

@@ -19,7 +19,7 @@ use simplelog::{
 use std::fs::File;
 use tokio::task::JoinSet;
 
-async fn async_handler(async_para: AsyncPara<'_>) -> Result<()> {
+async fn async_handler(async_para: AsyncPara<'static>) -> Result<()> {
     let AsyncPara {
         urls,
         class,
